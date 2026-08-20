@@ -2,17 +2,39 @@ import tkinter as tk
 import math
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+#region Logger
+class ColoredFormatter(logging.Formatter):
+    """Picks an ANSI colour for the level name based on the log level."""
+    LEVEL_COLORS = {
+        logging.DEBUG:    "\033[0;32m",  # green
+        logging.INFO:     "\033[0;36m",  # cyan
+        logging.WARNING:  "\033[0;33m",  # orange/yellow
+        logging.ERROR:    "\033[0;31m",  # red
+        logging.CRITICAL: "\033[1;31m",  # bold red
+    }
+    RESET = "\033[0m"
+
+    def format(self, record: logging.LogRecord):
+        color = self.LEVEL_COLORS.get(record.levelno, "")
+        original = record.levelname
+        record.levelname = f"{color}{original}{self.RESET}"
+        try:
+            return super().format(record)
+        finally:
+            record.levelname = original  # don't leak the colour into other handlers
+
+
+_handler = logging.StreamHandler()
+_handler.setFormatter(ColoredFormatter("%(levelname)s: %(message)s"))
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[_handler],
+)
+#endregion
+
 data = [
-'15','25','11','20','10','8','25','18','21','13','10','19','22','1','20','24','6','4','25','25','2','20','16','20','12','5','21','10','25','6','10','4','5','7','5','8','13','13','3','14','5','18','3','2','17','24','1','9','16','10','10','18','12','13','5','24','22','4','12','2','22','25','21','6','12','7','12','1','19','10','11','15','10','8','9','20','17','4','23','1','17','24','17','9','5','25','14','5','10','15','23','3','16','14','19','5','5','13','17','21','13','20','13','7','22','2','19','5','22','25','13','24','3','22','4','14','19','17','15','19','16','19','19','23','19','22','13','14','7','8','5','3','2','15','16','4','5','9','19','6','13','24','21','7','18','13','25','12','13','20','18','19','5','21','4','16','4','6','11','15','11','1','5','9','10','5','14','4','13','18','3','23','4','17','4','14','16','5','7','2','22','10','7','8','14','23','14','24','17','14','13','14','6','25','3','25','17','4','22','19','12','14','8','17','5','11','23','21','14','18','5','15','5','5','16','10','22','10','1','8','4','9','5','2','4','10','24','3','11','18','10','11','13','20','10','9','11','4','21','10','22','11','25','10','15','17','10','23','6','2','14','8','5','9','18','1','25','12','4','3','2','3','10','22','24','18','17','12','16','13','5','21','19','12','11','2','3','19','3','20','5','5','8','5','9','5','18','14','3','17','5','11','23','24','3','13','5','25','21','16','23','10','9','8','23','22','14','23','25','14','24','4','14','11','21','2','15','2','18','16','14','6','17','1','23','16','2','14','19','25','14','21','17','14','10','20','14','11','8','14','6','8','22','14','5','1','7','14','3','23','18','11','12','18','9','14','20','15','23','17','18','16','20','24','7','18','25','18','5','4','20','20','3','18','6','7','3','23','18','23','21','6','24','3','4','13','3','19','17','8','15','17','5','22','23','20','10','17','25','17','3','13','17','4','19','23','1','4','16','6','22','4','8','7','4','21','5','4','4','20','4','11','18','3','10','11','5','2','23','17','20','12','10','3','22','1','22','7','20','18','5','13','14','6','20','15','14','8','5','24','10','9','23','6','21','13','23','1','19','22','23','7','23','18','23','25','23','11','23','8','23','4','23','24','23','16','6','20','4','7','9','11','3','16','7','5','16','12','16','22','16','2','16','17','24','7','14','10','16','15','24','15','5','10','12','19','20','24','13','1','19','8','17','16','17','11','7','3','23','5','21','7','6','4','5','13','10','7','22','10','3','6','16','17','10','15','10','6','2','23','6','21','20','6','25','6','24','10','9','10','12','23','18','22','14','12','15','19','12','11','22','17','1','22','20','3','12','24','21','22','9','12','2','12','7','4','3','20','15','24','12','18','9','22','20','16','5','13','23','12','8','19','2','10','6','4','17','20','14','20','19','9','21','5','22','17','9','14','2','10','3','10','23','10','12','9','9','15','5','11','8','22','7','10','18',
+'1','1','2','5','2','3','4','2','1','4','2','3','1','4','1','3','2','1','3','4','1','5','4','5','3',
 ]
-"""
-"1","3","1","2","3",
-"2","2","1","4","3",
-"2","5","1","1","3",
-"1","4","2","5","1",
-"4","1","1","3","3",
-        """
 """
 const ReturnedNodeList = document.getElementsByClassName("hitori-cell-back")[0].childNodes;
 let result = "";
@@ -27,117 +49,125 @@ result += "'" + Number + "'" + ",";
 };
 console.log(result);
 """
+
+UNASSIGNED = 0
+WHITE = 1
+BLACK = 2
+
 # region Object
 class Board:
     def __init__(self, data: list[str]):
         self.root = tk.Tk()
         self.size = int(math.sqrt(len(data)))
-        self.adjustment = 15
-        self.data = [int(data) for data in data]
+        self.adjustment: int = 15
+        self.data: list[int] = [int(data) for data in data]
+        self.states: list[int] = [0 for _ in data]
+        self.states = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        self.cell_labels: list[tk.Label] = []
+        self.other_widgets: list[tk.Widget] = []
 
-        self.LIGHT_THEME: dict[str, list[str]] = {
-            "end": ["\x1b[0m", ""],
-            # Format: \x1b[38;5;<fg>;48;5;<bg>m
-            "grid": ["\x1b[1;38;5;0;48;2;204;204;204m", "#1b1b1b"],  # Bold black text on grey (#CCCCCC) background (for grid)
-            "selected": ["\x1b[38;5;231;48;5;0m", "#000000"],  # white text on black (selected cells)
-            "cleared": ["\x1b[38;5;0;48;5;231m", "#FFFFFF"],  # black text on white (cleared cells)
-            "normal": ["\x1b[38;5;231;48;2;204;204;204m", "#CCCCCC"]  # white text on dark grey (normal cells)
+        self.LIGHT_THEME: dict[str | int, list[str]] = {
+            "grid": ["#1b1b1b"],  # Grid
+            "background": ["#f7fafc"],  # Background
+            0: ["#000000", "#CCCCCC"],  # Unassigned cells
+            1: ["#000000", "#FFFFFF"],  # White cells
+            2: ["#999999", "#000000"],  # Black cells
         }
         
-        self.DARK_THEME: dict[str, list[str]] = {
-            "end": ["", ""],
-            # Format: \x1b[38;5;<fg>;48;5;<bg>m
-            "grid": ["", "#6d6d6d"],  # Bold black text on grey (#CCCCCC) background (for grid)
-            "selected": ["", "#191919"],  # white text on black (selected cells)
-            "cleared": ["", "#e5e5e5"],  # black text on white (cleared cells)
-            "normal": ["", "#BDBDBD"]  # white text on dark grey (normal cells) #TODO ANSI Colours
+        self.DARK_THEME: dict[str | int, list[str]] = {
+            "grid": ["#191919"],  # Grid
+            "background": ["#1c1e20"],  # Background
+            # [ Font, Background]
+            0: ["#191919", "#bdbdbd"],  # Unassigned cells
+            1: ["#191919", "#e5e5e5"],  # White cells
+            2: ["#949494", "#191919"],  # Black cells
         }
+
+        self.current_theme: dict[str | int, list[str]] = self.LIGHT_THEME
+
+    def get_index(self, row: int, col: int):
+        """
+        Function: get_index
         
-        self.current_theme = self.LIGHT_THEME
+        Description: Returns the list index of a cell at row 'row' and column 'col'
+        
+        Author: Seb Machac
+        
+        Input: row (int), col (int)
+        
+        Output: index (int)
+        """
+        return row * self.size + col
 
-    def apply_theme_to_widget(self, widget, theme):
-        """Apply theme colors to Label, Button, or Frame."""
-        wtype = type(widget)
+    def get_coords(self, index: int) -> tuple[int, int]:
+        """
+        Function: get_coords
+        
+        Description: Returns the coords (tuple[int, int]) as (row, col??)
+        
+        Author: Seb Machac
+        
+        Input: index (int)
+        
+        Output: coords (tuple[int, int])
+        """
+        return divmod(index, self.size)
 
-        if wtype is tk.Label:
-            widget.configure(bg=theme["bg"], fg=theme["fg"])
+    def get_neighbors(self, index: int) -> list[int]:
+        """
+        Function: get_neighbors
+        
+        Description: Returns the valid indices of touching neighbors (up, down, left, right)
+        
+        Author: Seb Machac
+        
+        Input: index (int)
+        
+        Output: neighbors (list[int])
+        """
+        row, col = divmod(index, self.size)
+        neighbors = []
 
-        elif wtype is tk.Button:
-            widget.configure(
-                bg=theme["bg"],
-                fg=theme["fg"],
-                activebackground=theme["activebackground"],
-                activeforeground=theme["activeforeground"]
-            )
+        for dr, dc in [(-1, 0), #Up
+                       (1,0), #Down
+                       (0,-1), #Left
+                       (0,1)]: #Right
+            r, c = row + dr, col + dc
+            if 0 <= r < self.size and 0 <= c < self.size:
+                neighbors.append(r * self.size + c)
+        return neighbors
 
-        elif wtype is tk.Frame:
-            widget.configure(bg=theme["bg"])
-
-    def apply_theme_recursively(self, widget, theme):
-        """Recursively apply theme to widget and all its children."""
-        self.apply_theme_to_widget(widget, theme)
-        for child in widget.winfo_children():
-            self.apply_theme_recursively(child, theme)
-
-
-    def toggle_theme(self):
-        print("changed theme")
-        logging.info(f"Updated theme to: '{self.current_theme}'")
-        self.current_theme = self.DARK_THEME if self.current_theme == self.LIGHT_THEME else self.LIGHT_THEME
-        self.root.update_idletasks()
-    
-    def print(self):
-        cell_id = 0
-        column_id = 0
-        row_id = 0
-        row = f"{self.current_theme['grid'][0]}|{self.current_theme['end'][0]}"
-
-        print(f"{self.current_theme['grid'][0]}| {'-' * ((self.size * 4) + self.adjustment)} |{self.current_theme['end'][0]}")
-        while row_id < self.size:
-            while column_id < self.size:
-                cell_color = (
-                    self.current_theme["cleared"][0]
-                    if self.isDetected(cell_id)
-                    else self.current_theme["normal"][0]
-                )
-                row += f"{cell_color} {data[cell_id]} {self.current_theme['end'][0]}{self.current_theme['grid'][0]}|{self.current_theme['end'][0]}"
-
-                cell_id += 1
-                column_id += 1
-
-            print(row)
-            print(
-                f"{self.current_theme['grid'][0]}| {'-' * ((self.size * 4) + self.adjustment)} |{self.current_theme['end'][0]}"
-            )
-
-            row = f"{self.current_theme['grid'][0]}|{self.current_theme['end'][0]}"
-            row_id += 1
-            column_id = 0
+    def next_iter(self): #TODO
+        logging.debug("Next Iteration Called")
+        logging.info(f'Blacks: {self.get_neighbors(8)}\n')
+        for neighbor in self.get_neighbors(9):
+            self.states[neighbor] = BLACK
+        self.refresh_board()
 
     def generate_ui(self):
+        self.other_widgets = []
+        self.labels = []
         cell_id = 0
         column_id = 0
         row_id = 0
-        self.grid_frame = tk.Frame(self.root, background=self.current_theme["grid"][1])
+        self.grid_frame = tk.Frame(self.root, background=self.current_theme["grid"][0])
         self.grid_frame.grid(row=0, column=0)
-
-        self.options_frame = tk.Frame(self.root, background=self.current_theme["grid"][1])
-        self.options_frame.grid(row=1, column=0)
 
         while row_id < self.size:
             while column_id < self.size:
-                cell_color = (
-                    self.current_theme["cleared"][1]
-                    if self.isDetected(cell_id)
-                    else self.current_theme["normal"][1]
-                )
+                state = self.states[cell_id]
+                colours = self.current_theme[state]
+
                 cell = tk.Label(self.grid_frame, 
                                 width=3,
                                 height=1,
                                 font=("ArialMT", 13), 
-                                text=data[cell_id], 
-                                background=cell_color)
+                                text=str(data[cell_id]), 
+                                bg=colours[1],
+                                fg=colours[0])
+                
                 cell.grid(row=row_id, column=column_id, padx=1, pady=1)
+                self.cell_labels.append(cell)
 
                 cell_id += 1
                 column_id += 1
@@ -145,10 +175,45 @@ class Board:
             row_id += 1
             column_id = 0
 
-        self.theme_button = tk.Button(self.options_frame, text="Theme", command=self.toggle_theme)
+        self.controls_frame = tk.Frame(self.root, background=self.current_theme["background"][0])
+        self.controls_frame.grid(row=1, column=0)
+
+        self.theme_button = tk.Button(self.controls_frame,
+                                     command=self.switch_theme,
+                                     text="Theme",)
         self.theme_button.grid(row=0, column=0)
+
+        self.next_button = tk.Button(self.controls_frame,
+                                     command=self.next_iter,
+                                     text="Next")
+        self.next_button.grid(row=0, column=1)
+
+        self.other_widgets += [self.grid_frame, self.controls_frame, self.next_button, self.theme_button, self.root]
         self.root.mainloop()
 
+    def refresh_board(self):
+        for widget in self.other_widgets:
+            logging.info(self.current_theme["background"][0])
+            print(type(widget))
+            if isinstance(widget, (tk.Frame, tk.Button)):
+                print(widget)
+                widget.config(
+                    bg=self.current_theme["background"][0]
+                )
+
+        for idx, label in enumerate(self.cell_labels):
+            state = self.states[idx]
+            colours = self.current_theme[state]
+            label.config(
+                bg=colours[1],
+                fg=colours[0],
+                text=str(self.data[idx]),
+            )
+
+    def switch_theme(self):
+        self.current_theme = self.DARK_THEME if self.current_theme == self.LIGHT_THEME else self.LIGHT_THEME
+        self.refresh_board()
+    
     def isDetected(self, cell: int) -> bool:
 
         if (
@@ -168,9 +233,59 @@ class Board:
             and self.data[cell - 1] == self.data[cell + 1]
         )
 
+    def has_adjacent_blacks(self) -> bool:
+        """
+        Function: has_adjacent_blacks
+        
+        Description: Returns true if any two black cells touch
+        
+        Author: Seb Machac
+        
+        Input: state_array (list[int])
+        
+        Output: is_valid (bool)
+        """
+        for i in range(len(self.states)):
+            if self.states[i] == BLACK:
+                for neighbor in self.get_neighbors(i):
+                    if self.states[neighbor] == BLACK:
+                        return True
+        return False
 
+    def has_duplicate_whites(self) -> bool:
+        """
+        Function: has_duplicate_whites
+        
+        Description: Returns true if any row or col has identical whites
+        
+        Author: Seb Machac
+        
+        Output: is_valid (bool)
+        """
+        #Check rows
+        for r in range(self.size):
+            seen_in_row = set()
+            for c in range(self.size):
+                idx = self.get_index(r, c)
+                if self.states[idx] == WHITE:
+                    val = self.data[idx]
+                    if val in seen_in_row:
+                        return True
+                    seen_in_row.add(val)
+
+        #Check columns
+        for c in range(self.size):
+            seen_in_col = set()
+            for r in range(self.size):
+                idx = self.get_index(r, c)
+                if self.states[idx] == WHITE:
+                    val = self.data[idx]
+                    if val in seen_in_col:
+                        return True
+                    seen_in_col.add(val)
+        return False
+    
 board1 = Board(data)
-board1.print()
 board1.generate_ui()
 
 #endregion

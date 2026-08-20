@@ -6,5 +6,11 @@
         "statusBar.background": "#262626",
         "statusBar.foreground": "#e9dbb7"
     },
-    "editor.fontLigatures": false
+    "editor.fontLigatures": false,
+    "cSpell.words": [
+        "activebackground",
+        "activeforeground",
+        "DOUBLEBUF",
+        "wtype"
+    ]
 }
