@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        New script
+// @name        Hitori Solver
 // @namespace   Violentmonkey Scripts
 // @icon
 // @version     1.0.0
@@ -52,9 +52,16 @@ function getNumFromDiv(div) {
 function getBoard() {
   divList = [];
   numList = [];
-
-  divList = document.getElementsByClassName("hitori-cell-back")[0].childNodes;
-
+  if (
+    document.URL == "https://www.puzzles-mobile.com/hitori/quest/10x10-normal"
+  ) {
+    console.log("gfagfw");
+    divList = document.getElementById("game").childNodes[0].childNodes;
+    console.log(divList);
+  } else if (document.URL == "https://www.puzzle-hitori.com/") {
+    console.log("fwqaguhogw");
+    divList = document.getElementsByClassName("hitori-cell-back")[0].childNodes;
+  }
   console.log(divList);
 
   console.log(numList);
@@ -72,26 +79,42 @@ function getBoard() {
 function createButtons() {
   if (!document.body) return; //Return if DOM !loaded
 
-  // Disable auto-hiding feature
-  window.addEventListener(
-    "blur",
-    function () {
-      handleVisibilityChange(!0);
-    },
-    !1,
-  );
+  if (document.URL == "https://www.puzzle-hitori.com/") {
+    // Disable auto-hiding feature
+    window.addEventListener(
+      "blur",
+      function () {
+        handleVisibilityChange(!0);
+      },
+      !1,
+    );
+  }
 
   //#region CSS Injection
   const style = document.createElement("style");
   style.type = "text/css";
   style.textContent = cssRules; // Add CSS rules as a string
   document.head.appendChild(style); // Append to <head>
+  console.log("Injected CSS");
   //#endregion
 
   //#region Add simulated mouse cursor
-  puzzleContainer = document.getElementById("puzzleContainer");
+  console.log(document.URL);
+  if (
+    document.URL == "https://www.puzzles-mobile.com/hitori/quest/10x10-normal"
+  ) {
+    console.log("wdffua");
+    puzzleContainer = document.getElementById("game");
+  } else if (document.URL == "https://www.puzzle-hitori.com/") {
+    console.log("fwa");
+    puzzleContainer =
+      document.getElementsByClassName("hitori-cell-back")[0].childNodes;
+  }
 
-  if (!puzzleContainer) return;
+  if (!puzzleContainer) {
+    console.log("bad!!");
+    return;
+  }
 
   const simulatedMouse = document.createElement("div");
   simulatedMouse.id = "indicator";
@@ -100,10 +123,11 @@ function createButtons() {
   simulatedMouse.style.left = "0px";
   simulatedMouse.style.pointerEvents = "none";
   puzzleContainer.appendChild(simulatedMouse);
-  //endregion
+  //#endregion
 
   //#region Adding custom buttons
   const getListButton = document.createElement("button");
+  console.log("creae");
   getListButton.type = "button";
   const showMatchesButton = document.createElement("button");
   showMatchesButton.type = "button";
@@ -115,7 +139,7 @@ function createButtons() {
   puzzleContainer.appendChild(showMatchesButton);
 
   getListButton.addEventListener("click", getBoard);
-  showMatchesButton.addEventListener("click", showMatches);
+  showMatchesButton.addEventListener("click", showMatchesNew);
   //#endregion
 }
 
@@ -132,6 +156,17 @@ function isDetected(cell_id) {
     cell_id % size != size - 1 &&
     numList[cell_id - 1] == numList[cell_id + 1]
   );
+}
+
+function showMatchesNew() {
+  for (let cell_id = 1; cell_id < divList.length; cell_id++) {
+    console.log(cell_id);
+    if (isDetected(cell_id)) {
+      console.log(divList[cell_id]);
+      divList[cell_id].className = "cell selectable cell-x";
+      console.log(`LOG: cell number ${cell_id} is ${isDetected(5)}`);
+    }
+  }
 }
 
 function showMatches() {

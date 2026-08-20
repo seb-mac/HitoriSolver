@@ -50,8 +50,9 @@ function createButtons() {
   console.log("Injected CSS");
   //#endregion
 
-  puzzleContainer = document.getElementById("hitori-cell-back");
-
+  const puzzleContainer =
+    document.getElementsByClassName("hitori-cell-back")[0];
+  console.log(puzzleContainer);
   //#region Adding custom buttons
   const getListButton = document.createElement("button");
   getListButton.type = "button";
